@@ -4,14 +4,10 @@ if(!apcu_enabled()) {
     die("APCu is not installation.\r\n");
 }
 
-//echo '<pre>';
-//print_r(apcu_cache_info());
-//die;
-//die(apcu_fetch('herrywatch:backend:captcha'));
-
-//apcu_store('herrywatch:backend:captcha','d',55);
-
-//die((apcu_fetch('herrywatch:backend:captcha')));
+$k = '';
+if(isset($_GET['keyword'])) {
+	$k = trim($_GET['keyword']);
+}
 
 if(isset($_GET['action'])) {
 	$act = $_GET['action'];
@@ -19,7 +15,7 @@ if(isset($_GET['action'])) {
 	if($act == 'delete') {
 		apcu_delete($key);
 		if(!apcu_fetch($key)) {
-			header('Location: /');
+			header('Location: /'.($k?'?keyword='.$k:''));
 		}
 	}
 }
@@ -33,71 +29,187 @@ $info = apcu_cache_info();
     <meta charset="UTF-8">
     <title>APCu WebUI</title>
     <link href="/assets/bootstrap-5.1.3-dist/css/bootstrap.min.css" rel="stylesheet">
+	<style>
+	body {
+		background:#f2f2f2;
+	}
+	
+	.el-container {
+		width: 1200px;
+		height: auto;
+		margin: 0 auto;
+	}
+	
+	.el-container header {
+		width: 1200px;
+		height: 78px;
+	}
+	
+	.el-container header h1 {
+		width: 240px;
+		height: 78px;
+		line-height: 78px;
+		font-size: 30px;
+		margin: 0;
+		float: left;
+	}
+	
+	.el-container header form {
+		width: 400px;
+		margin: 20px 0;
+		float: left;
+	}
+	
+	.el-container .alert {
+		margin-bottom: 20px;
+	}
+	
+	.el-container table .el-w80 {
+		width: 80px;
+	}
+	
+	.el-container table .el-w200 {
+		width: 200px;
+	}
+	
+	.el-container table .el-w400 {
+		width: 400px;
+		word-break:break-all;
+	}
+	
+	.el-container table .el-wauto {
+		width: 480px;
+		word-break:break-all;
+	}
+	
+	.el-container table td em {
+		font-style: normal;
+		color: red;
+	}
+	.el-container main {
+		background:#fff;
+	}
+	
+	.el-totop,
+	.el-totop:hover,
+	.el-totop:visited,
+	.el-totop:active{
+		width: 46px;
+		height: 46px;
+		line-height: 46px;
+		text-align: center;
+		text-decoration: none;
+		font-size:20px;
+		color: #fff;
+		background: #0d6efd;
+		border-radius: 50%;
+		position: fixed;
+		bottom: 10%;
+		left: 50%;
+		margin-left: 620px;
+	}
+	</style>
 </head>
-<body style="background:#f2f2f2;">
-	<div  style="width: 80%;margin: 0 auto;">
-		<h1>APCu WebUI</h1>
+<body>
+	<div class="el-container">
+		<header>
+			<h1>APCu WebUI</h1>
+			<form class="input-group mb-3">
+			  <input name="keyword" value="<?php echo $k; ?>" type="text" class="form-control" autocomplete="off" placeholder="关键字 支持*匹配">
+			  <button class="btn btn-primary" type="submit">检索</button>
+			</form>
+		</header>
 		<div class="alert alert-info" role="alert">total: <?php echo $info['num_entries']; ?></div>
-		<table class="table table-striped table-hover align-middle" style="background:#fff">
-		<thead>
-		  <tr>
-		    <th scope="col" style="width:80px">#</th>
-		    <th scope="col" style="width:200px">键</th>
-		    <th scope="col">值</th>
-		    <th scope="col" style="width:80px"></th>
-		  </tr>
-		</thead>
-		<tbody>
-			<?php
-				foreach($info['cache_list'] as $i=> $t) {
-			?>
-		  <tr>
-		    <th scope="row" class="align-top" style="width:80px">
-		    	<?php
-		    		echo $i+1;
-		    	?>
-		    </th>
-		    <td class="align-top" style="width:200px">
-		    	<span class="span-popover" data-bs-toggle="popover" title="<?php echo $t['info']; ?>" data-bs-content="dddd">
-				  	<?php
-				  		echo $t['info'];
-				  	?>
-		    	</span>
-		    </td>
-		    <td class="align-top">
-		    	<?php
-		    		$value = apcu_fetch($t['info']);
-		    		if(is_scalar($value)) {
-		    			echo $value;
-		    		} else {
-		    			echo json_encode($value, JSON_UNESCAPED_UNICODE);
-		    		}
-		    	?>
-		    </td>
-		    <td style="width:80px">
-		    	<a href="?action=delete&key=<?php echo urlencode($t['info']);?>" class="btn btn-danger btn-sm">Delete</a>
-		    </td>
-		  </tr>
-		  <?php } ?>
-		  <?php
-		  	if($info['num_entries'] === 0) {
-		  ?>
-		  <tr>
-		  	<td colspan=4>暂无数据</td>
-		  </tr>
-		  <?php } ?>
-		</tbody>
-  </div>
-</table>
+		<main>
+			<table class="table table-striped table-hover align-middle">
+				<thead>
+				  <tr>
+					<th scope="col">#</th>
+					<th scope="col">键名</th>
+					<th scope="col">类型</th>
+					<th scope="col">数值</th>
+					<th scope="col"></th>
+				  </tr>
+				</thead>
+				<tbody>
+					<?php
+						$f = substr($k, -1) === '*';
+						$l = substr($k, 0, 1) === '*';
+						$k = trim($k, '*');
+						$t = 0;
+						foreach($info['cache_list'] as $i=> $t) {
+							$key = $t['info'];
+							if($k) {
+								if($f) {
+									if(0 !== strpos($t['info'], $k)) {
+										continue;
+									}
+								} else if($l) {
+									if(substr($t['info'], -strlen($k)) !== $key) {
+										continue;
+									}
+								} else {
+									if(strpos($t['info'], $k) === false) {
+										continue;
+									}
+								}
+								$key = str_replace($k, "<em>{$k}</em>", $key);
+							}
+							$value = apcu_fetch($t['info']);
+							$t++;
+					?>
+				  <tr>
+					<th scope="row" class="align-top">
+						<div class="el-w80">
+							<?php
+								echo $i+1;
+							?>
+						</div>
+					</th>
+					<td class="align-top">
+						<div class="el-w400">
+							<?php
+								echo $key;
+							?>
+						</div>
+					</td>
+					<td class="align-top">
+						<div class="el-w80">
+							<?php
+								echo gettype($value);
+							?>
+						</div>
+					</td>
+					<td class="align-top">
+						<div class="el-wauto">
+						<?php
+							if(is_scalar($value)) {
+								echo $value;
+							} else {
+								echo json_encode($value, JSON_UNESCAPED_UNICODE);
+							}
+						?>
+						</div>
+					</td>
+					<td>
+						<div class="el-w80">
+							<a href="?action=delete&keyword=<?php echo $k;?>&key=<?php echo urlencode($t['info']);?>" class="btn btn-danger btn-sm">Delete</a>
+						</div>
+					</td>
+				  </tr>
+				  <?php } ?>
+				  <?php
+					if($t === 0) {
+				  ?>
+				  <tr>
+					<td colspan=4>暂无数据</td>
+				  </tr>
+				  <?php } ?>
+				</tbody>
+			</table>
+		</main>
+	</div>
+	<a href="#top" class="el-totop">↑</a>
 </body>
-<script src="/assets/bootstrap-5.1.3-dist/js/bootstrap.bundle.min.js"></script>
-<script>
-new bootstrap.Popover(document.querySelector('.span-popover'), {
-  html: true,
-  delay: 1000,
-  trigger: 'hover',
-  container: 'body',
-})
-</script>
 </html>
 
