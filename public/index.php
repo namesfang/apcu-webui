@@ -70,16 +70,16 @@ $info = apcu_cache_info();
 	
 	.el-container table .el-w200 {
 		width: 200px;
+		word-break: break-all;
 	}
 	
 	.el-container table .el-w400 {
 		width: 400px;
-		word-break:break-all;
+		word-break: break-all;
 	}
 	
 	.el-container table .el-wauto {
-		width: 480px;
-		word-break:break-all;
+		word-break: break-all;
 	}
 	
 	.el-container table td em {
@@ -87,7 +87,7 @@ $info = apcu_cache_info();
 		color: red;
 	}
 	.el-container main {
-		background:#fff;
+		background: #fff;
 	}
 	
 	.el-totop,
@@ -125,9 +125,10 @@ $info = apcu_cache_info();
 				<thead>
 				  <tr>
 					<th scope="col">#</th>
-					<th scope="col">键名</th>
-					<th scope="col">类型</th>
-					<th scope="col">数值</th>
+					<th scope="col">Key</th>
+					<th scope="col">TTL</th>
+					<th scope="col">Type</th>
+					<th scope="col">Value</th>
 					<th scope="col"></th>
 				  </tr>
 				</thead>
@@ -136,7 +137,7 @@ $info = apcu_cache_info();
 						$f = substr($k, -1) === '*';
 						$l = substr($k, 0, 1) === '*';
 						$k = trim($k, '*');
-						$t = 0;
+						$s = 0;
 						foreach($info['cache_list'] as $i=> $t) {
 							$key = $t['info'];
 							if($k) {
@@ -156,20 +157,28 @@ $info = apcu_cache_info();
 								$key = str_replace($k, "<em>{$k}</em>", $key);
 							}
 							$value = apcu_fetch($t['info']);
-							$t++;
+							$detail = apcu_key_info($t['info']);
+							$s++;
 					?>
 				  <tr>
 					<th scope="row" class="align-top">
 						<div class="el-w80">
 							<?php
-								echo $i+1;
+								echo $s;
 							?>
 						</div>
 					</th>
 					<td class="align-top">
-						<div class="el-w400">
+						<div class="el-w200">
 							<?php
 								echo $key;
+							?>
+						</div>
+					</td>
+					<td class="align-top">
+						<div class="el-w80">
+							<?php
+								echo $detail['ttl'];
 							?>
 						</div>
 					</td>
@@ -184,9 +193,9 @@ $info = apcu_cache_info();
 						<div class="el-wauto">
 						<?php
 							if(is_scalar($value)) {
-								echo $value;
+								echo is_bool($value) ? ($value?'true':'false') : $value;
 							} else {
-								echo json_encode($value, JSON_UNESCAPED_UNICODE);
+								print_r($value);
 							}
 						?>
 						</div>
@@ -199,7 +208,7 @@ $info = apcu_cache_info();
 				  </tr>
 				  <?php } ?>
 				  <?php
-					if($t === 0) {
+					if($s === 0) {
 				  ?>
 				  <tr>
 					<td colspan=4>暂无数据</td>
