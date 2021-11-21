@@ -161,13 +161,13 @@ $info = apcu_cache_info();
 							$s++;
 					?>
 				  <tr>
-					<th scope="row" class="align-top">
+					<td scope="row" class="align-top">
 						<div class="el-w80">
 							<?php
 								echo $s;
 							?>
 						</div>
-					</th>
+					</td>
 					<td class="align-top">
 						<div class="el-w200">
 							<?php
@@ -211,7 +211,7 @@ $info = apcu_cache_info();
 					if($s === 0) {
 				  ?>
 				  <tr>
-					<td colspan=4>暂无数据</td>
+					<td colspan=6>暂无数据</td>
 				  </tr>
 				  <?php } ?>
 				</tbody>
